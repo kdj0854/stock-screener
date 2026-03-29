@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #0f172a;
+  --secondary: #10b981;
+  --accent: #ef4444;
+  --background: #f8fafc;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--primary);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 表格样式 */
+.table-header {
+  @apply bg-slate-50 text-slate-600 font-semibold text-sm uppercase tracking-wider;
+}
+
+.table-row {
+  @apply border-b border-slate-100 hover:bg-slate-50 transition-colors;
+}
+
+.table-cell {
+  @apply px-4 py-3 text-slate-700;
+}
+
+/* 按钮样式 */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+}
+
+.btn-secondary {
+  @apply bg-slate-600 text-white hover:bg-slate-700 active:bg-slate-800;
+}
+
+.btn-success {
+  @apply bg-success-500 text-white hover:bg-success-600 active:bg-success-700;
+}
+
+.btn-danger {
+  @apply bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700;
+}
+
+/* 输入框样式 */
+.input {
+  @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all;
+}
+
+/* 卡片样式 */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden;
+}
+
+.card-header {
+  @apply px-6 py-4 border-b border-slate-200 bg-slate-50;
+}
+
+.card-body {
+  @apply p-6;
+}
+
+/* 标签样式 */
+.tag {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.tag-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.tag-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.tag-warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.tag-info {
+  @apply bg-blue-100 text-blue-800;
+}

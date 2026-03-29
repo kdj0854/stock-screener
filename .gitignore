@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# 数据库文件（本地数据，不入库）
+*.db
+*.sqlite
+*.sqlite3
+
+# 日志
+*.log
+sync_log.txt
+
+# 前端构建产物
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 本地配置（含密码，禁止上传）
+backend/vt_setting.json
+vt_setting.json
+
+# 临时脚本
+fix_panel.py
+backend/selftest.py
+backend/q.py
+backend/db_check.py
+backend/vnpy_db.py
+backend/sync_market_data.py
+
+# 日志
+*.log
+*.txt
+!README.md
+!*说明*.md
