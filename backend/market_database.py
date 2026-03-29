@@ -1,28 +1,21 @@
 """
 市场数据库配置模块
-独立 SQLite 数据库 market_data.db，存储从 baostock 获取的股票基本信息与财务指标
-（与回测数据库 stock_data.db 完全分离）
+存储从 baostock 获取的股票基本信息与财务指标，使用 MySQL
 """
-from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
+from database import engine  # 复用 database.py 中的全局引擎
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MARKET_DB_URL = f"sqlite:///{os.path.join(BASE_DIR, 'market_data.db')}"
-
-market_engine = create_engine(
-    MARKET_DB_URL,
-    connect_args={"check_same_thread": False}
-)
-
-MarketSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=market_engine)
+MarketSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 MarketBase = declarative_base()
 
+# 保留别名，内部代码需要它
+market_engine = engine
+
 
 def get_market_db():
-    """FastAPI 依赖注入：获取 market_data.db 会话"""
+    """FastAPI 依赖注入：获取市场数据库会话"""
     db = MarketSessionLocal()
     try:
         yield db
@@ -31,5 +24,5 @@ def get_market_db():
 
 
 def init_market_db():
-    """初始化 market_data.db 表结构"""
-    MarketBase.metadata.create_all(bind=market_engine)
+    """(已删除）初始化市场数据库表结构（MySQL 下建表请执行说明文档中的 SQL）"""
+    MarketBase.metadata.create_all(bind=engine)

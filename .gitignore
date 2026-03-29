@@ -6,7 +6,7 @@ __pycache__/
 venv/
 env/
 
-# 数据库文件（本地数据，不入库）
+# 数据库文件（已全部迁移到 MySQL，本地残留的旧 SQLite 文件不入库）
 *.db
 *.sqlite
 *.sqlite3
