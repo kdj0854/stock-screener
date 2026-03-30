@@ -23,7 +23,7 @@
 
 ## 技术架构
 
-- **后端**：Python 3 + FastAPI + SQLite
+- **后端**：Python 3 + FastAPI + MySQL + SQLAlchemy
 - **前端**：React 18 + TypeScript + Tailwind CSS + Recharts
 - **数据**：Pandas 处理金融数据
 
@@ -64,6 +64,170 @@ stock-screener/
 - Python 3.8+
 - Node.js 18+
 - npm 或 yarn
+- MySQL 5.7+ 或 8.0+
+
+---
+
+## 数据库安装与配置
+
+### 一、安装 MySQL
+
+1. 下载并安装 [MySQL Community Server](https://dev.mysql.com/downloads/mysql/)（推荐 8.0）
+2. 安装完成后启动 MySQL 服务
+3. 使用 root 账号登录，创建数据库（数据库名可自定义，下面以 `stock_db` 为例）：
+
+```sql
+CREATE DATABASE stock_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 二、配置数据库连接
+
+后端通过 `C:\Users\<你的用户名>\.vntrader\vt_setting.json` 读取数据库连接信息。
+
+#### 方式 A：使用配置文件（推荐）
+
+在 `C:\Users\<你的用户名>\.vntrader\` 目录下创建或编辑 `vt_setting.json`，填入以下内容：
+
+```json
+{
+    "database.host": "127.0.0.1",
+    "database.port": 3306,
+    "database.user": "root",
+    "database.password": "你的MySQL密码",
+    "database.database": "stock_db"
+}
+```
+
+#### 方式 B：使用环境变量
+
+若配置文件不存在，后端会回退读取以下环境变量：
+
+| 环境变量 | 说明 | 默认值 |
+|---|---|---|
+| `MYSQL_HOST` | 数据库主机 | `127.0.0.1` |
+| `MYSQL_PORT` | 端口 | `3306` |
+| `MYSQL_USER` | 用户名 | `root` |
+| `MYSQL_PASSWORD` | 密码 | 空 |
+| `MYSQL_DATABASE` | 数据库名 | `vnpy` |
+
+### 三、创建数据表
+
+连接到上一步创建好的数据库，依次执行以下 SQL 建表语句：
+
+```sql
+-- 股票基本信息表
+CREATE TABLE IF NOT EXISTS stocks (
+    id       INT PRIMARY KEY AUTO_INCREMENT,
+    code     VARCHAR(20) NOT NULL,
+    name     VARCHAR(100) NOT NULL,
+    sector   VARCHAR(100),
+    exchange VARCHAR(20),
+    UNIQUE INDEX idx_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 股票财务/估值数据表（PE、PB、市值等）
+CREATE TABLE IF NOT EXISTS stock_financials (
+    id           INT PRIMARY KEY AUTO_INCREMENT,
+    stock_id     INT NOT NULL,
+    report_date  DATE NOT NULL,
+    pe_ratio     FLOAT,
+    pb_ratio     FLOAT,
+    ps_ratio     FLOAT,
+    market_cap   FLOAT,
+    sharpe_ratio FLOAT,
+    data_source  VARCHAR(20) DEFAULT 'baostock',
+    INDEX idx_stock_id (stock_id),
+    CONSTRAINT fk_stock FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 当前回测交易记录表
+CREATE TABLE IF NOT EXISTS backtest_trades_current (
+    id                 INT PRIMARY KEY AUTO_INCREMENT,
+    run_id             VARCHAR(36) NOT NULL,
+    stock_code         VARCHAR(20) NOT NULL,
+    stock_name         VARCHAR(100),
+    market             VARCHAR(10),
+    buy_date           DATE,
+    buy_price          FLOAT,
+    sell_date          DATE,
+    sell_price         FLOAT,
+    profit_rate        FLOAT,
+    lowest_after_buy   FLOAT,
+    highest_after_buy  FLOAT,
+    entry_inefficiency FLOAT,
+    exit_inefficiency  FLOAT,
+    close_reason       VARCHAR(20),
+    created_at         DATETIME,
+    INDEX idx_run_id (run_id),
+    INDEX idx_stock_code (stock_code),
+    INDEX idx_market (market)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 回测历史归档表
+CREATE TABLE IF NOT EXISTS backtest_trades_history (
+    id                 INT PRIMARY KEY AUTO_INCREMENT,
+    run_id             VARCHAR(36) NOT NULL,
+    stock_code         VARCHAR(20) NOT NULL,
+    stock_name         VARCHAR(100),
+    market             VARCHAR(10),
+    buy_date           DATE,
+    buy_price          FLOAT,
+    sell_date          DATE,
+    sell_price         FLOAT,
+    profit_rate        FLOAT,
+    lowest_after_buy   FLOAT,
+    highest_after_buy  FLOAT,
+    entry_inefficiency FLOAT,
+    exit_inefficiency  FLOAT,
+    close_reason       VARCHAR(20),
+    created_at         DATETIME,
+    archived_at        DATETIME,
+    INDEX idx_run_id (run_id),
+    INDEX idx_stock_code (stock_code),
+    INDEX idx_market (market)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 贝叶斯/RL 参数优化训练记录表
+CREATE TABLE IF NOT EXISTS rl_training_runs (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    session_id      VARCHAR(36) NOT NULL,
+    trial_number    INT NOT NULL,
+    dip_threshold   FLOAT NOT NULL,
+    profit_target   FLOAT NOT NULL,
+    reward          FLOAT NOT NULL,
+    total_trades    INT,
+    closed_trades   INT,
+    win_rate        FLOAT,
+    avg_profit_rate FLOAT,
+    holding_count   INT,
+    created_at      DATETIME,
+    INDEX idx_session_id (session_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 四、历史行情数据表（dbbardata）
+
+回测和市值估算依赖一张名为 `dbbardata` 的历史 K 线数据表，结构如下：
+
+```sql
+CREATE TABLE IF NOT EXISTS dbbardata (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    symbol      VARCHAR(20) NOT NULL,
+    exchange    VARCHAR(20) NOT NULL,
+    `interval`  VARCHAR(10) NOT NULL,
+    datetime    DATETIME NOT NULL,
+    open_price  FLOAT,
+    high_price  FLOAT,
+    low_price   FLOAT,
+    close_price FLOAT,
+    volume      FLOAT,
+    INDEX idx_symbol_exchange (symbol, exchange, `interval`, datetime)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+> **说明**：`dbbardata` 表中的数据需自行导入。可使用 baostock 或其他行情数据源获取历史日线（`interval = 'd'`）数据后批量写入。无此数据时，筛选和回测功能将无法正常运行。
+
+---
 
 ### 安装步骤
 
@@ -178,10 +342,14 @@ npm run dev
 
 ### 数据模型
 
-- **Stock**：股票基本信息
-- **StockFinancial**：财务数据（市盈率、市值）
-- **StockPrice**：历史价格数据
-- **BacktestResult**：回测交易记录
+| 表名 | 说明 |
+|---|---|
+| `stocks` | 股票基本信息（代码、名称、行业、交易所） |
+| `stock_financials` | 财务/估值数据（PE、PB、PS、市值、夏普率） |
+| `backtest_trades_current` | 当次回测交易记录 |
+| `backtest_trades_history` | 历史回测归档记录 |
+| `rl_training_runs` | 贝叶斯/RL 参数优化训练结果 |
+| `dbbardata` | 历史日线行情数据（需外部导入） |
 
 ### 核心技术栈
 
