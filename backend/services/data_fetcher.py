@@ -158,21 +158,8 @@ def get_stock_valuation_history(stock_code: str, years: int = 3) -> List[Dict]:
                 )
                 
                 if not df.empty:
-                    # 取最后一个交易日数据
-                    last_day = df.iloc[-1]
-                    
-                    # 估算市盈率（简化计算：股价/每股收益）
-                    # 这里使用静态市盈率近似值
-                    pe_ratio = last_day["收盘"] / max(last_day.get("成交量", 1), 1) * random.uniform(10, 30)
-                    
-                    # 估算市值（简化）
-                    market_cap = last_day["收盘"] * random.uniform(1, 5) / 10  # 亿元
-                    
-                    valuations.append({
-                        "report_date": report_date,
-                        "pe_ratio": round(pe_ratio, 2),
-                        "market_cap": round(market_cap, 2)
-                    })
+                    # K线数据无法获取真实PE，跳过，由baostock同步提供真实估值
+                    pass
             except:
                 continue
         
@@ -195,17 +182,7 @@ def select_stocks_by_sector(sector: str = None, count: int = 50) -> List[Dict]:
         选中的股票列表
     """
     all_stocks = get_stock_list()
-    
-    if sector:
-        # 这里可以根据行业分类筛选（需要额外的行业数据源）
-        # 简化处理：随机选择
-        import random
-        selected = all_stocks[:count]
-    else:
-        # 随机选择一定数量的股票
-        import random
-        selected = random.sample(all_stocks, min(count, len(all_stocks)))
-    
+    selected = all_stocks[:count]
     print(f"✅ 已选择 {len(selected)} 只股票作为样本")
     return selected
 

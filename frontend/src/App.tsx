@@ -30,17 +30,18 @@ function App() {
   const allTradesRef = useRef<BacktestResponse['trades']>([]);
 
   // 加载股票列表
-  useEffect(() => {
-    const loadStocks = async () => {
-      try {
-        const stockList = await getAllStocks();
-        setStocks(stockList);
-      } catch (error) {
-        console.error('加载股票列表失败:', error);
-      }
-    };
-    loadStocks();
+  const loadStocks = useCallback(async () => {
+    try {
+      const stockList = await getAllStocks();
+      setStocks(stockList);
+    } catch (error) {
+      console.error('加载股票列表失败:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStocks();
+  }, [loadStocks]);
 
   // 处理筛选结果
   const handleScreenerComplete = (results: ScreenerResult[]) => {

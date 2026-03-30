@@ -144,35 +144,52 @@ def get_stock_basic_list() -> List[Dict]:
 
 def _get_total_shares_wan(bs_code: str) -> Optional[float]:
     """
-    从 baostock query_profit_data 获取最近一期总股本（万股）
+    从 baostock query_profit_data 获取最近一期总股本，返回单位：万股
     query_profit_data fields:
       code, pubDate, statDate, roeAvg, npMargin, gpMargin,
       netProfit, epsTTM, MBRevenue, totalShare, liqaShare
-    totalShare 单位: 万股
+    注意：baostock 的 totalShare 单位是「股」（不是万股），需要除以 10000 转换
     """
     if not bs_login():
         return None
     today = date.today()
-    # 依次尝试当年 Q4→Q3→Q2→Q1，再尝试去年 Q4
+    # 依次尝试当年→去年→前年各季度
+    # 说明：年报(Q4)截止4月30日，Q1季报截止5月，所以3~4月期间最新可靠数据是去年Q3
     attempts = [
         (today.year,     4),
         (today.year,     3),
         (today.year,     2),
         (today.year,     1),
         (today.year - 1, 4),
+        (today.year - 1, 3),   # 去年Q3季报（11月发布，最可靠的兜底）
+        (today.year - 1, 2),   # 去年Q2季报（8月发布）
+        (today.year - 1, 1),   # 去年Q1季报（5月发布）
+        (today.year - 2, 4),   # 前年年报
     ]
     for year, quarter in attempts:
         rs = bs.query_profit_data(code=bs_code, year=str(year), quarter=str(quarter))
         if rs.error_code != "0":
             print(f"[SHARES] {bs_code} query_profit_data {year}Q{quarter} error: {rs.error_msg}")
             continue
+        # 动态获取字段索引，避免列序变化导致读错
+        try:
+            fields = rs.fields.split(",") if rs.fields else []
+            ts_idx = fields.index("totalShare") if "totalShare" in fields else 9
+        except (AttributeError, ValueError):
+            ts_idx = 9
+
         while rs.next():
             row = rs.get_row_data()
             try:
-                total_share = float(row[9])   # totalShare 列
-                if total_share > 0:
-                    print(f"[SHARES] {bs_code} totalShare={total_share:.0f}万股 ({year}Q{quarter})")
-                    return total_share
+                total_share_str = row[ts_idx] if len(row) > ts_idx else ""
+                if not total_share_str or total_share_str == "":
+                    continue
+                total_share_gu = float(total_share_str)   # baostock 返回单位为「股」
+                if total_share_gu <= 0:
+                    continue
+                total_share_wan = total_share_gu / 10000  # 转换为万股
+                print(f"[SHARES] {bs_code} totalShare={total_share_wan:.2f}万股 ({year}Q{quarter})")
+                return total_share_wan
             except (ValueError, IndexError):
                 pass
     print(f"[SHARES] {bs_code} 未能获取总股本")
