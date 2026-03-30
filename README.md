@@ -231,21 +231,40 @@ CREATE TABLE IF NOT EXISTS dbbardata (
 
 ### 安装步骤
 
-#### 1. 安装后端依赖
+#### 1. 创建并激活虚拟环境（推荐）
 
+建议在独立的虚拟环境中安装依赖，避免污染系统 Python 环境。
+
+**Windows（PowerShell）**：
+```powershell
+cd stock-screener/backend
+python -m venv stock_screener
+stock_screener\Scripts\Activate.ps1
+```
+
+**macOS / Linux**：
 ```bash
 cd stock-screener/backend
+python3 -m venv stock_screener
+source stock_screener/bin/activate
+```
+
+> 激活成功后，命令行前缀会出现 `(stock_screener)` 字样。后续所有 `pip` 和 `python` 命令均在此环境内执行。
+
+#### 2. 安装后端依赖
+
+```bash
 pip install -r requirements.txt
 ```
 
-#### 2. 安装前端依赖
+#### 3. 安装前端依赖
 
 ```bash
 cd stock-screener/frontend
 npm install
 ```
 
-#### 3. 启动应用
+#### 4. 启动应用
 
 **启动后端**（终端 1）：
 ```bash
@@ -261,7 +280,7 @@ npm run dev
 ```
 前端将在 http://localhost:5173 运行
 
-#### 4. 使用应用
+#### 5. 使用应用
 
 1. 打开浏览器访问 http://localhost:5173
 2. 点击右上角「初始化演示数据」按钮
